@@ -1,5 +1,5 @@
-use bevy::prelude::*;
-use crate::bullet::Bullet;
+use bevy::{prelude::*, window::PrimaryWindow};
+use crate::{bullet::Bullet, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 pub const PLAYER_SPEED: f32 = 500.0;
 
@@ -68,6 +68,7 @@ pub fn player_shoot(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
     player_query: Query<&mut Transform, With<Player>>,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
     // asset_server: Res<AssetServer>,  for bullets
 ) {
     if let Ok(transform) = player_query.get_single() {
@@ -77,7 +78,12 @@ pub fn player_shoot(
             let x = transform.translation.x;
             let y = transform.translation.y;
             // get cursor/ joystick/ etc. position and change direction
-            direction += Vec2::new(x + 1.0, y);
+            if let Some(position) = q_windows.single().cursor_position() {
+                println!("Cursor is inside the primary window, at {:?}", position);
+                println!("x {:?} y {:?}", position.x, position.y);
+                direction += Vec2::new(-WINDOW_WIDTH / 2.0 + position.x, WINDOW_HEIGHT / 2.0 - position.y);
+                println!("direction {:?}", direction);
+            }
 
             commands.spawn((
                 SpriteBundle {
