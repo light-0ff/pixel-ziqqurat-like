@@ -1,8 +1,10 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
+mod bullet;
 mod player;
 
 use bevy::prelude::*;
+use bullet::BulletPlugin;
 use player::{Player, PlayerPlugin};
 
 pub const WINDOW_WIDTH: f32 = 1280.0;
@@ -23,6 +25,7 @@ fn main() {
                 })
                 .set(ImagePlugin::default_nearest()),
         )
+        .add_plugins(BulletPlugin)
         .add_plugins(PlayerPlugin)
         .add_systems(Startup, (setup, spawn_center))
         .add_systems(Update, camera_track_player)

@@ -1,16 +1,17 @@
-use bevy::{prelude::*, window::PrimaryWindow};
+use bevy::prelude::*;
+use crate::bullet::Bullet;
+
+pub const PLAYER_SPEED: f32 = 500.0;
 
 #[derive(Component)]
 pub struct Player;
-
-pub const PLAYER_SPEED: f32 = 500.0;
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player)
-            .add_systems(Update, player_movement);
+            .add_systems(Update, (player_movement, player_shoot));
     }
 }
 
@@ -60,5 +61,39 @@ pub fn player_movement(
             direction = direction.normalize();
         }
         transform.translation += direction * PLAYER_SPEED * time.delta_seconds();
+    }
+}
+
+pub fn player_shoot(
+    mut commands: Commands,
+    keyboard_input: Res<Input<KeyCode>>,
+    player_query: Query<&mut Transform, With<Player>>,
+    // asset_server: Res<AssetServer>,  for bullets
+) {
+    if let Ok(transform) = player_query.get_single() {
+        let mut direction = Vec2::ZERO;
+
+        if keyboard_input.pressed(KeyCode::Space) {
+            let x = transform.translation.x;
+            let y = transform.translation.y;
+            // get cursor/ joystick/ etc. position and change direction
+            direction += Vec2::new(x + 1.0, y);
+
+            commands.spawn((
+                SpriteBundle {
+                    transform: Transform::from_xyz(x, y, 0.0),
+                    // texture: asset_server.load("sprites/ball_red.png"),
+                    sprite: Sprite {
+                        color: Color::rgb(1.0, 1.0, 0.0),
+                        custom_size: Some(Vec2::new(25.0, 25.0)),
+                        ..default()
+                    },
+                    ..default()
+                },
+                Bullet {
+                    direction: direction.normalize(),
+                },
+            ));
+        }
     }
 }
