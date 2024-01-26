@@ -3,7 +3,7 @@
 mod player;
 
 use bevy::prelude::*;
-use player::PlayerPlugin;
+use player::{Player, PlayerPlugin};
 
 pub const WINDOW_WIDTH: f32 = 1280.0;
 pub const WINDOW_HEIGHT: f32 = 800.0;
@@ -25,6 +25,7 @@ fn main() {
         )
         .add_plugins(PlayerPlugin)
         .add_systems(Startup, (setup, spawn_center))
+        .add_systems(Update, camera_track_player)
         .run();
 }
 
@@ -49,4 +50,14 @@ pub fn spawn_center(mut commands: Commands) {
             ..default()
         })
         .insert(Name::new("Center"));
+}
+
+fn camera_track_player(
+    mut camera_transform: Query<&mut Transform, With<Camera>>,
+    player_transform: Query<&Transform, (With<Player>, Without<Camera>)>,
+) {
+    let mut camera_trans = camera_transform.single_mut();
+    let playertrans = player_transform.single().translation.truncate();
+    let camtrans = camera_trans.translation.truncate();
+    camera_trans.translation = camtrans.lerp(playertrans, 0.1).extend(999.0);
 }
