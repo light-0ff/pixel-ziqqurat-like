@@ -1,11 +1,11 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
 mod bullet;
-mod player;
+mod characters;
 
 use bevy::prelude::*;
 use bullet::BulletPlugin;
-use player::{Player, PlayerPlugin};
+use characters::{player::Player, CharacterPlugin};
 
 pub const WINDOW_WIDTH: f32 = 1280.0;
 pub const WINDOW_HEIGHT: f32 = 800.0;
@@ -26,21 +26,19 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
         )
         .add_plugins(BulletPlugin)
-        .add_plugins(PlayerPlugin)
+        .add_plugins(CharacterPlugin)
         .add_systems(Startup, (setup, spawn_center))
         .add_systems(Update, camera_track_player)
         .run();
 }
 
 fn setup(mut commands: Commands) {
-    commands
-        .spawn(Camera2dBundle::default())
-        .insert(Name::new("MainCamera"));
+    commands.spawn((Camera2dBundle::default(), Name::new("MainCamera")));
 }
 
 pub fn spawn_center(mut commands: Commands) {
-    commands
-        .spawn(SpriteBundle {
+    commands.spawn((
+        SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(1.2, 1.2, 1.2),
                 custom_size: Some(Vec2::new(60.0, 60.0)),
@@ -51,8 +49,9 @@ pub fn spawn_center(mut commands: Commands) {
                 ..default()
             },
             ..default()
-        })
-        .insert(Name::new("Center"));
+        },
+        Name::new("Center"),
+    ));
 }
 
 fn camera_track_player(

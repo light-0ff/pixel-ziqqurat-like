@@ -1,5 +1,7 @@
-use bevy::{prelude::*, window::PrimaryWindow};
 use crate::{bullet::Bullet, WINDOW_HEIGHT, WINDOW_WIDTH};
+use bevy::{prelude::*, window::PrimaryWindow};
+
+use super::component::FromPlayer;
 
 pub const PLAYER_SPEED: f32 = 500.0;
 
@@ -15,12 +17,9 @@ impl Plugin for PlayerPlugin {
     }
 }
 
-pub fn spawn_player(
-    mut commands: Commands,
-    // asset_server: Res<AssetServer>, will need for sprites
-) {
-    commands
-        .spawn(SpriteBundle {
+pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(0.5, 0.8, 1.0),
                 custom_size: Some(Vec2::new(50.0, 50.0)),
@@ -30,10 +29,12 @@ pub fn spawn_player(
                 translation: Vec3::new(0.0, 0.0, 0.1),
                 ..default()
             },
+            texture: asset_server.load("ducky.png"),
             ..default()
-        })
-        .insert(Player)
-        .insert(Name::new("Player"));
+        },
+        Player,
+        Name::new("Player"),
+    ));
 }
 
 pub fn player_movement(
@@ -79,10 +80,10 @@ pub fn player_shoot(
             let y = transform.translation.y;
             // get cursor/ joystick/ etc. position and change direction
             if let Some(position) = q_windows.single().cursor_position() {
-                println!("Cursor is inside the primary window, at {:?}", position);
-                println!("x {:?} y {:?}", position.x, position.y);
-                direction += Vec2::new(-WINDOW_WIDTH / 2.0 + position.x, WINDOW_HEIGHT / 2.0 - position.y);
-                println!("direction {:?}", direction);
+                direction += Vec2::new(
+                    -WINDOW_WIDTH / 2.0 + position.x,
+                    WINDOW_HEIGHT / 2.0 - position.y,
+                );
             }
 
             commands.spawn((
@@ -99,6 +100,7 @@ pub fn player_shoot(
                 Bullet {
                     direction: direction.normalize(),
                 },
+                FromPlayer,
             ));
         }
     }
