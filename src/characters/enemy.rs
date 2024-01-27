@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use super::component::Health;
 
 #[derive(Component)]
 pub struct Enemy;
@@ -23,6 +24,7 @@ pub fn spawn_enemy(mut commands: Commands) {
             ..default()
         },
         Enemy,
+        Health(5),
         Name::new("Stationary Enemy"),
     ));
 }

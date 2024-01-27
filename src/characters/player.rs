@@ -1,7 +1,12 @@
+use super::{
+    component::{FromPlayer, Health},
+    enemy::Enemy,
+};
 use crate::{bullet::Bullet, WINDOW_HEIGHT, WINDOW_WIDTH};
-use bevy::{prelude::*, window::PrimaryWindow};
-
-use super::component::FromPlayer;
+use bevy::{
+    math::Vec3Swizzles, prelude::*, sprite::collide_aabb::collide, utils::HashSet,
+    window::PrimaryWindow,
+};
 
 pub const PLAYER_SPEED: f32 = 500.0;
 
@@ -12,8 +17,10 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_player)
-            .add_systems(Update, (player_movement, player_shoot));
+        app.add_systems(Startup, spawn_player).add_systems(
+            Update,
+            (player_movement, player_shoot, player_laser_hit_enemy_system),
+        );
     }
 }
 
@@ -33,6 +40,7 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         },
         Player,
+        Health(6),
         Name::new("Player"),
     ));
 }
@@ -103,5 +111,83 @@ pub fn player_shoot(
                 FromPlayer,
             ));
         }
+    }
+}
+
+fn player_laser_hit_enemy_system(
+    mut commands: Commands,
+    laser_query: Query<
+        (
+            Entity,
+            &Transform,
+            // &SpriteSize
+        ),
+        (With<Bullet>, With<FromPlayer>),
+    >,
+    mut enemy_query: Query<
+        (
+            Entity,
+            &Transform,
+            // &SpriteSize
+            &mut Health,
+        ),
+        With<Enemy>,
+    >,
+) {
+    let mut despawned_entities: HashSet<Entity> = HashSet::new();
+
+    // iterate trough lasers
+    for (
+        laser_entity,
+        laser_tf,
+        // laser_size
+    ) in laser_query.iter()
+    {
+        if despawned_entities.contains(&laser_entity) {
+            continue;
+        }
+        let laser_scale = Vec2::from(laser_tf.scale.xy());
+
+        // iterate trough enemies
+        enemy_query.iter_mut().for_each(
+            |(
+                enemy_entity,
+                enemy_tf,
+                // enemy_size
+                mut enemy_health,
+            )| {
+                if despawned_entities.contains(&enemy_entity)
+                    || despawned_entities.contains(&laser_entity)
+                {
+                    return;
+                }
+                let enemy_scale = Vec2::from(enemy_tf.scale.xy());
+                let laser_size = Vec2::new(25.0, 25.0);
+                let enemy_size = Vec2::new(50.0, 50.0);
+                // determine if collision
+                let collision = collide(
+                    laser_tf.translation,
+                    laser_size * laser_scale,
+                    enemy_tf.translation,
+                    enemy_size * enemy_scale,
+                );
+
+                // perform collision
+                if let Some(_) = collision {
+                    commands.entity(laser_entity).despawn();
+                    despawned_entities.insert(laser_entity);
+
+                    if enemy_health.0 > 1 {
+                        enemy_health.take_damage(1);
+                        return;
+                    }
+                    commands.entity(enemy_entity).despawn();
+                    despawned_entities.insert(enemy_entity);
+
+                    // spawn explosionToSpawn
+                    // commands.spawn(ExplosionToSpawn(enemy_tf.translation.clone()));
+                }
+            },
+        );
     }
 }
