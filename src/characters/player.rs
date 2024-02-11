@@ -2,7 +2,7 @@ use super::{
     component::{FromPlayer, Health},
     enemy::Enemy,
 };
-use crate::{bullet::Bullet, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{bullet::Bullet, weapon::Pistol, WINDOW_HEIGHT, WINDOW_WIDTH};
 use bevy::{
     math::Vec3Swizzles, prelude::*, sprite::collide_aabb::collide, utils::HashSet,
     window::PrimaryWindow,
@@ -19,7 +19,12 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player).add_systems(
             Update,
-            (player_movement, player_shoot, player_laser_hit_enemy_system),
+            (
+                player_movement,
+                // player_shoot,
+                test_shoot,
+                player_laser_hit_enemy_system,
+            ),
         );
     }
 }
@@ -32,16 +37,17 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
                 custom_size: Some(Vec2::new(50.0, 50.0)),
                 ..default()
             },
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 0.1),
-                ..default()
-            },
+            transform: Transform::from_xyz(0.0, 0.0, 0.1),
             texture: asset_server.load("ducky.png"),
             ..default()
         },
         Player,
         Health(6),
         Name::new("Player"),
+        Pistol {
+            fire_rate: 1.0,
+            damage: 5.0,
+        },
     ));
 }
 
@@ -110,6 +116,23 @@ pub fn player_shoot(
                 },
                 FromPlayer,
             ));
+        }
+    }
+}
+
+pub fn test_shoot(
+    commands: Commands,
+    keyboard_input: Res<Input<KeyCode>>,
+    player_query: Query<(&Transform, &Pistol), With<Player>>,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
+) {
+    if let Ok((transform, shotgun)) = player_query.get_single() {
+        if keyboard_input.pressed(KeyCode::Space) {
+            shotgun.shoot(
+                commands,
+                transform.translation,
+                q_windows.single().cursor_position(),
+            );
         }
     }
 }

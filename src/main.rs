@@ -2,6 +2,7 @@
 
 mod bullet;
 mod characters;
+mod weapon;
 
 use bevy::prelude::*;
 use bullet::BulletPlugin;
