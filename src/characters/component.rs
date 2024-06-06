@@ -7,13 +7,26 @@ pub struct FromPlayer;
 pub struct FromEnemy;
 
 #[derive(Component)]
-pub struct Health(pub i32);
-
-impl Health {
-    pub fn take_damage(&mut self, damage: i32) {
-        self.0 -= damage;
-    }
-    pub fn heal(&mut self, heal: i32) {
-        self.0 += heal;
-    }
+pub struct Health {
+    pub current: i32,
+    pub max: i32,
 }
+
+#[derive(Component)]
+pub struct StaffAmo{
+    pub current: i32,
+    pub max: i32,
+}
+
+#[derive(Component)]
+pub struct ThomeAmo{
+    pub current: i32,
+    pub max: i32,
+}
+
+#[derive(Component)]
+pub struct AlchemyAmo{
+    pub current: i32,
+    pub max: i32,
+}
+

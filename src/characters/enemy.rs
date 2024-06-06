@@ -30,7 +30,10 @@ pub fn spawn_enemy(mut commands: Commands) {
             ..default()
         },
         Enemy,
-        Health(5),
+        Health { 
+            current: 5, 
+            max: 5
+        },
         Name::new("Stationary Enemy"),
     ));
 }

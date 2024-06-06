@@ -1,8 +1,9 @@
 use super::{
-    component::{FromPlayer, Health},
+    component::{AlchemyAmo, FromPlayer, Health, StaffAmo, ThomeAmo},
     enemy::Enemy,
 };
-use crate::{bullet::Bullet, weapon::Pistol, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::weapon::*;
+use crate::{bullet::Bullet, WINDOW_HEIGHT, WINDOW_WIDTH};
 use bevy::{
     math::Vec3Swizzles, prelude::*, sprite::collide_aabb::collide, utils::HashSet,
     window::PrimaryWindow,
@@ -17,19 +18,25 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_player).add_systems(
-            Update,
-            (
-                player_movement,
-                // player_shoot,
-                test_shoot,
-                player_laser_hit_enemy_system,
-            ),
-        );
+        app.add_systems(Startup, spawn_player)
+            .add_systems(Startup, test_spawn_weapon)
+            .add_systems(
+                Update,
+                (player_movement, player_shoot, player_laser_hit_enemy_system),
+            );
     }
 }
 
 pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
+    const DEFAULT_WAND: Weapon = Weapon {
+        weapon_type: WeaponType::Wand,
+        damage: 1,
+        firerate: 1.0,
+    };
+    let mut inventory = Inventory {
+        slots: [Some(DEFAULT_WAND), None, None, None, None],
+        active_slot: 0,
+    };
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
@@ -42,12 +49,24 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         },
         Player,
-        Health(6),
         Name::new("Player"),
-        Pistol {
-            fire_rate: 1.0,
-            damage: 5.0,
+        Health {
+            current: 10,
+            max: 10,
         },
+        StaffAmo {
+            current: 0,
+            max: 10,
+        },
+        ThomeAmo {
+            current: 0,
+            max: 10,
+        },
+        AlchemyAmo {
+            current: 0,
+            max: 10,
+        },
+        inventory,
     ));
 }
 
@@ -57,49 +76,50 @@ pub fn player_movement(
     time: Res<Time>,
 ) {
     if let Ok(mut transform) = player_query.get_single_mut() {
-        let mut direction = Vec3::ZERO;
-
+        let mut movement = Vec3::ZERO;
         if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
-            direction += Vec3::new(-1.0, 0.0, 0.0);
+            movement.x -= 1.0;
         }
         if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D) {
-            direction += Vec3::new(1.0, 0.0, 0.0);
+            movement.x += 1.0;
         }
         if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
-            direction += Vec3::new(0.0, 1.0, 0.0);
+            movement.y += 1.0;
         }
         if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
-            direction += Vec3::new(0.0, -1.0, 0.0);
+            movement.y -= 1.0;
         }
-
-        if direction.length() > 0.0 {
-            direction = direction.normalize();
-        }
-        transform.translation += direction * PLAYER_SPEED * time.delta_seconds();
+        
+        transform.translation += movement.normalize_or_zero() * PLAYER_SPEED * time.delta_seconds();
     }
 }
 
 pub fn player_shoot(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
-    player_query: Query<&mut Transform, With<Player>>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
+    player_query: Query<(&mut Transform, &mut Inventory), With<Player>>,
+    windows_q: Query<&Window, With<PrimaryWindow>>,
     // asset_server: Res<AssetServer>,  for bullets
 ) {
-    if let Ok(transform) = player_query.get_single() {
+    if let Ok((transform, inventory)) = player_query.get_single() {
         let mut direction = Vec2::ZERO;
-
         if keyboard_input.pressed(KeyCode::Space) {
             let x = transform.translation.x;
             let y = transform.translation.y;
             // get cursor/ joystick/ etc. position and change direction
-            if let Some(position) = q_windows.single().cursor_position() {
+            if let Some(position) = windows_q.single().cursor_position() {
                 direction += Vec2::new(
                     -WINDOW_WIDTH / 2.0 + position.x,
                     WINDOW_HEIGHT / 2.0 - position.y,
                 );
             }
 
+            // delete
+            println!(
+                "{:#?}",
+                inventory.slots[inventory.active_slot].as_ref().unwrap()
+            );
+            // calculate exact damage(crit etc) and pass it to bullet?
             commands.spawn((
                 SpriteBundle {
                     transform: Transform::from_xyz(x, y, 0.0),
@@ -116,23 +136,6 @@ pub fn player_shoot(
                 },
                 FromPlayer,
             ));
-        }
-    }
-}
-
-pub fn test_shoot(
-    commands: Commands,
-    keyboard_input: Res<Input<KeyCode>>,
-    player_query: Query<(&Transform, &Pistol), With<Player>>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
-) {
-    if let Ok((transform, shotgun)) = player_query.get_single() {
-        if keyboard_input.pressed(KeyCode::Space) {
-            shotgun.shoot(
-                commands,
-                transform.translation,
-                q_windows.single().cursor_position(),
-            );
         }
     }
 }
@@ -200,8 +203,10 @@ fn player_laser_hit_enemy_system(
                     commands.entity(laser_entity).despawn();
                     despawned_entities.insert(laser_entity);
 
-                    if enemy_health.0 > 1 {
-                        enemy_health.take_damage(1);
+                    if enemy_health.current > 1 {
+                        // replace damage with weapon damage
+                        let damage: i32 = 1;
+                        enemy_health.current -= damage;
                         return;
                     }
                     commands.entity(enemy_entity).despawn();
@@ -213,4 +218,29 @@ fn player_laser_hit_enemy_system(
             },
         );
     }
+}
+
+fn test_spawn_weapon(
+    mut commands: Commands,
+    // asset_server: Res<AssetServer>
+) {
+    let wand = Weapon {
+        weapon_type: WeaponType::Wand,
+        damage: 1,
+        firerate: 1.0,
+    };
+    commands.spawn((
+        SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb(0.5, 0.8, 1.0),
+                custom_size: Some(Vec2::new(50.0, 50.0)),
+                ..default()
+            },
+            transform: Transform::from_xyz(100.0, 0.0, 0.5),
+            // texture: asset_server.load("ducky.png"),
+            ..default()
+        },
+        wand,
+        Name::new("Abra kadabra"),
+    ));
 }
