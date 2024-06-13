@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-pub const BULLET_SPEED: f32 = 200.0;
+pub const BULLET_SPEED: f32 = 310.0;
 
 #[derive(Component)]
 pub struct Bullet {

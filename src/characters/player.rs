@@ -1,5 +1,5 @@
 use super::{
-    component::{AlchemyAmo, FromPlayer, Health, StaffAmo, ThomeAmo},
+    component::{AlchemyAmo, FromPlayer, Health, StaffAmo, ThomeAmo, Velocity},
     enemy::Enemy,
 };
 use crate::weapon::*;
@@ -8,8 +8,6 @@ use bevy::{
     math::Vec3Swizzles, prelude::*, sprite::collide_aabb::collide, utils::HashSet,
     window::PrimaryWindow,
 };
-
-pub const PLAYER_SPEED: f32 = 500.0;
 
 #[derive(Component)]
 pub struct Player;
@@ -20,10 +18,8 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player)
             .add_systems(Startup, test_spawn_weapon)
-            .add_systems(
-                Update,
-                (player_movement, player_shoot, player_laser_hit_enemy_system),
-            );
+            .add_systems(FixedUpdate, player_movement)
+            .add_systems(Update, (player_shoot, player_laser_hit_enemy_system));
     }
 }
 
@@ -50,6 +46,7 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         Player,
         Name::new("Player"),
+        Velocity(Vec3::new(300.0, 300.0, 1.0)),
         Health {
             current: 10,
             max: 10,
@@ -72,10 +69,10 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 pub fn player_movement(
     keyboard_input: Res<Input<KeyCode>>,
-    mut player_query: Query<&mut Transform, With<Player>>,
+    mut player_query: Query<(&mut Transform, &Velocity), With<Player>>,
     time: Res<Time>,
 ) {
-    if let Ok(mut transform) = player_query.get_single_mut() {
+    if let Ok((mut transform, velocity)) = player_query.get_single_mut() {
         let mut movement = Vec3::ZERO;
         if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
             movement.x -= 1.0;
@@ -89,8 +86,9 @@ pub fn player_movement(
         if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
             movement.y -= 1.0;
         }
-        
-        transform.translation += movement.normalize_or_zero() * PLAYER_SPEED * time.delta_seconds();
+
+        transform.translation +=
+            movement.normalize_or_zero() * velocity.0 * time.delta_seconds();
     }
 }
 
@@ -225,7 +223,7 @@ fn test_spawn_weapon(
     // asset_server: Res<AssetServer>
 ) {
     let wand = Weapon {
-        weapon_type: WeaponType::Wand,
+        weapon_type: WeaponType::Staff,
         damage: 1,
         firerate: 1.0,
     };

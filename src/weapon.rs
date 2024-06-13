@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 
-use crate::bullet::Bullet;
-use std::fmt::Display;
+// use crate::bullet::Bullet;
 
 #[derive(Debug)]
 pub enum WeaponType {
