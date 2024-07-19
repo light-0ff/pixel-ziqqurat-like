@@ -2,8 +2,8 @@ use super::{
     component::{AlchemyAmo, FromPlayer, Health, StaffAmo, ThomeAmo, Velocity},
     enemy::Enemy,
 };
-use crate::weapon::*;
 use crate::{bullet::Bullet, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{weapon::*, MainCamera, MyWorldCoords};
 use bevy::{
     math::Vec3Swizzles, prelude::*, sprite::collide_aabb::collide, utils::HashSet,
     window::PrimaryWindow,
@@ -87,8 +87,7 @@ pub fn player_movement(
             movement.y -= 1.0;
         }
 
-        transform.translation +=
-            movement.normalize_or_zero() * velocity.0 * time.delta_seconds();
+        transform.translation += movement.normalize_or_zero() * velocity.0 * time.delta_seconds();
     }
 }
 
@@ -96,21 +95,22 @@ pub fn player_shoot(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
     player_query: Query<(&mut Transform, &mut Inventory), With<Player>>,
-    windows_q: Query<&Window, With<PrimaryWindow>>,
+    mycoords: ResMut<MyWorldCoords>,
     // asset_server: Res<AssetServer>,  for bullets
 ) {
-    if let Ok((transform, inventory)) = player_query.get_single() {
+    if let Ok((player_transform, inventory)) = player_query.get_single() {
         let mut direction = Vec2::ZERO;
         if keyboard_input.pressed(KeyCode::Space) {
-            let x = transform.translation.x;
-            let y = transform.translation.y;
+            let player_x = player_transform.translation.x;
+            let player_y = player_transform.translation.y;
             // get cursor/ joystick/ etc. position and change direction
-            if let Some(position) = windows_q.single().cursor_position() {
-                direction += Vec2::new(
-                    -WINDOW_WIDTH / 2.0 + position.x,
-                    WINDOW_HEIGHT / 2.0 - position.y,
-                );
-            }
+            direction.x = mycoords.0.x;
+            direction.y = mycoords.0.y;
+            println!(
+                "\n\n\n\n\n\n\nplayer:{} {}\ncoursor:{}{}\n\n\n\n\n\n\n",
+                player_x, player_y, mycoords.0.x, mycoords.0.y
+            );
+            direction = direction.normalize_or_zero();
 
             // delete
             println!(
@@ -120,7 +120,7 @@ pub fn player_shoot(
             // calculate exact damage(crit etc) and pass it to bullet?
             commands.spawn((
                 SpriteBundle {
-                    transform: Transform::from_xyz(x, y, 0.0),
+                    transform: Transform::from_xyz(player_x, player_y, 0.0),
                     // texture: asset_server.load("sprites/ball_red.png"),
                     sprite: Sprite {
                         color: Color::rgb(1.0, 1.0, 0.0),
@@ -130,7 +130,7 @@ pub fn player_shoot(
                     ..default()
                 },
                 Bullet {
-                    direction: direction.normalize(),
+                    direction: direction,
                 },
                 FromPlayer,
             ));
