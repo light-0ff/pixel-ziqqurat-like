@@ -2,11 +2,15 @@ use super::{
     component::{AlchemyAmo, FromPlayer, Health, StaffAmo, ThomeAmo, Velocity},
     enemy::Enemy,
 };
-use crate::{bullet::Bullet, WINDOW_HEIGHT, WINDOW_WIDTH};
-use crate::{weapon::*, MainCamera, MyWorldCoords};
+use crate::bullet::Bullet;
+use crate::{weapon::*, MyWorldCoords};
 use bevy::{
-    math::Vec3Swizzles, prelude::*, sprite::collide_aabb::collide, utils::HashSet,
-    window::PrimaryWindow,
+    math::{
+        bounding::{Aabb2d, IntersectsVolume},
+        Vec3Swizzles,
+    },
+    prelude::*,
+    utils::HashSet,
 };
 
 #[derive(Component)]
@@ -36,7 +40,7 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
-                color: Color::rgb(0.5, 0.8, 1.0),
+                color: Color::srgb(0.5, 0.8, 1.0),
                 custom_size: Some(Vec2::new(50.0, 50.0)),
                 ..default()
             },
@@ -68,22 +72,22 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 pub fn player_movement(
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     mut player_query: Query<(&mut Transform, &Velocity), With<Player>>,
     time: Res<Time>,
 ) {
     if let Ok((mut transform, velocity)) = player_query.get_single_mut() {
         let mut movement = Vec3::ZERO;
-        if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::A) {
+        if keyboard_input.pressed(KeyCode::ArrowLeft) || keyboard_input.pressed(KeyCode::KeyA) {
             movement.x -= 1.0;
         }
-        if keyboard_input.pressed(KeyCode::Right) || keyboard_input.pressed(KeyCode::D) {
+        if keyboard_input.pressed(KeyCode::ArrowRight) || keyboard_input.pressed(KeyCode::KeyD) {
             movement.x += 1.0;
         }
-        if keyboard_input.pressed(KeyCode::Up) || keyboard_input.pressed(KeyCode::W) {
+        if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
             movement.y += 1.0;
         }
-        if keyboard_input.pressed(KeyCode::Down) || keyboard_input.pressed(KeyCode::S) {
+        if keyboard_input.pressed(KeyCode::ArrowDown) || keyboard_input.pressed(KeyCode::KeyS) {
             movement.y -= 1.0;
         }
 
@@ -93,7 +97,7 @@ pub fn player_movement(
 
 pub fn player_shoot(
     mut commands: Commands,
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     player_query: Query<(&mut Transform, &mut Inventory), With<Player>>,
     mycoords: ResMut<MyWorldCoords>,
     // asset_server: Res<AssetServer>,  for bullets
@@ -123,7 +127,7 @@ pub fn player_shoot(
                     transform: Transform::from_xyz(player_x, player_y, 0.0),
                     // texture: asset_server.load("sprites/ball_red.png"),
                     sprite: Sprite {
-                        color: Color::rgb(1.0, 1.0, 0.0),
+                        color: Color::srgb(1.0, 1.0, 0.0),
                         custom_size: Some(Vec2::new(25.0, 25.0)),
                         ..default()
                     },
@@ -189,15 +193,17 @@ fn player_laser_hit_enemy_system(
                 let laser_size = Vec2::new(25.0, 25.0);
                 let enemy_size = Vec2::new(50.0, 50.0);
                 // determine if collision
-                let collision = collide(
-                    laser_tf.translation,
-                    laser_size * laser_scale,
-                    enemy_tf.translation,
-                    enemy_size * enemy_scale,
-                );
+                let collision = Aabb2d::new(
+                    laser_tf.translation.truncate(),
+                    laser_size * laser_scale / 2.,
+                )
+                .intersects(&Aabb2d::new(
+                    enemy_tf.translation.truncate(),
+                    enemy_size * enemy_scale / 2.,
+                ));
 
                 // perform collision
-                if let Some(_) = collision {
+                if collision {
                     commands.entity(laser_entity).despawn();
                     despawned_entities.insert(laser_entity);
 
@@ -230,7 +236,7 @@ fn test_spawn_weapon(
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
-                color: Color::rgb(0.5, 0.8, 1.0),
+                color: Color::srgb(0.5, 0.8, 1.0),
                 custom_size: Some(Vec2::new(50.0, 50.0)),
                 ..default()
             },

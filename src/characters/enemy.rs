@@ -18,7 +18,7 @@ pub fn spawn_enemy(mut commands: Commands) {
     commands.spawn((
         SpriteBundle {
             sprite: Sprite {
-                color: Color::rgb(1.0, 0.5, 0.5),
+                color: Color::srgb(1.0, 0.5, 0.5),
                 custom_size: Some(Vec2::new(sprite_width, sprite_height)),
                 ..Default::default()
             },

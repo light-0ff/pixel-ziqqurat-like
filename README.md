@@ -29,12 +29,17 @@ This workflow runs on every tag.
 
 It will build:
 * For Linux and Windows, a .zip archive containing the executable and the `assets`.
-* For macOS, a dmg image with a .app containing the assets.
-* For wasm, a .zip archive with the wasm binary, the js bindings, an html file loading it, and the assets.
+* For macOS, a dmg image with a .app containing the `assets`.
+* For wasm, a .zip archive with the wasm binary, the js bindings, an html file loading it, and the `assets`.
 
 If you don't want to target some of those platforms, you can remove the corresponding job from the file [release.yaml](./.github/workflows/release.yaml).
 
 If you don't want to attach the builds to the GitHub release, set `env.add_binaries_to_github_release` to `false`.
+
+If you are using Git LFS, set `env.use_git_lfs` to `true` so your assets are properly checked out.
+
+> [!Warning]
+> GitHub's LFS storage has a quota. Please take a look at GitHub's documentation [here](https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-storage-and-bandwidth-usage) to understand the quota and costs before enabling this option.
 
 ### Git Tag from GitHub UI
 
@@ -62,11 +67,8 @@ If you would like to use the GitHub workflows included here for your own project
 
 1. The release workflow relies on the `index.html` file under `/wasm` for web builds
 2. Make sure that the env variable `binary` ([release.yaml](.github/workflows/release.yaml#L10)) matches the name of your binary
-3. In case your project doesn't have an `assets` folder
-   1. Either create one and put a `.gitkeep` file in it to be able to push it
-   2. Or remove the `cp -r assets` statements in the build jobs
-4. Adapt the used toolchain if you are using nightly
-5. In your GitHub repo's settings, under `Actions -> General` make sure "Read and Write permissions" is selected under "Workflow permissions" near the bottom. This fixes the error `Error: Resource not accessible by integration`.
+3. Adapt the used toolchain if you are using nightly
+4. In your GitHub repo's settings, under `Actions -> General` make sure "Read and Write permissions" is selected under "Workflow permissions" near the bottom. This fixes the error `Error: Resource not accessible by integration`.
 
 
 ### Publish on itch.io
