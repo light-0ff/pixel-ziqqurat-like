@@ -101,23 +101,21 @@ pub fn player_movement(
 pub fn player_shoot(
     mut commands: Commands,
     keyboard_input: Res<ButtonInput<KeyCode>>,
-    player_query: Query<(&mut Transform, &mut Inventory), With<Player>>,
-    mycoords: ResMut<MyWorldCoords>,
+    player_query: Query<(&Transform, &mut Inventory), With<Player>>,
+    triangle_query: Query<&Transform, (With<Triangle>, Without<Player>)>,
     // asset_server: Res<AssetServer>,  for bullets
 ) {
     if let Ok((player_transform, inventory)) = player_query.get_single() {
         let mut direction = Vec2::ZERO;
+        let triangle_x = triangle_query.single().translation.x;
+        let triangle_y = triangle_query.single().translation.y;
         if keyboard_input.pressed(KeyCode::Space) {
             let player_x = player_transform.translation.x;
             let player_y = player_transform.translation.y;
             // get cursor/ joystick/ etc. position and change direction
-            direction.x = mycoords.0.x;
-            direction.y = mycoords.0.y;
-            println!(
-                "\n\n\n\n\n\n\nplayer:{} {}\ncoursor:{} {}\n\n\n\n\n\n\n",
-                player_x, player_y, mycoords.0.x, mycoords.0.y
-            );
-            direction = direction.normalize_or_zero();
+            direction.x = triangle_x - player_x;
+            direction.y = triangle_y - player_y;
+            direction = direction.normalize();
 
             // delete
             println!(

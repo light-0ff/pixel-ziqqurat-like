@@ -35,7 +35,9 @@ pub struct Inventory {
 // uses weapon sprite to orbit around player
 #[derive(Component)]
 pub struct Triangle;
+
 const ORBIT_DISTANCE: f32 = 50.;
+
 pub fn spawn_weapon_aim(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
