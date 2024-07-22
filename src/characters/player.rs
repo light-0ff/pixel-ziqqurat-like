@@ -21,9 +21,12 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_player)
-            .add_systems(Startup, test_spawn_weapon)
+            .add_systems(Startup, (test_spawn_weapon, spawn_weapon_aim))
             .add_systems(FixedUpdate, player_movement)
-            .add_systems(Update, (player_shoot, player_laser_hit_enemy_system));
+            .add_systems(
+                Update,
+                (player_shoot, player_laser_hit_enemy_system, move_weapon_aim),
+            );
     }
 }
 
@@ -44,7 +47,7 @@ pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
                 custom_size: Some(Vec2::new(50.0, 50.0)),
                 ..default()
             },
-            transform: Transform::from_xyz(0.0, 0.0, 0.1),
+            transform: Transform::from_xyz(0.0, 0.0, 0.2),
             texture: asset_server.load("ducky.png"),
             ..default()
         },
@@ -111,7 +114,7 @@ pub fn player_shoot(
             direction.x = mycoords.0.x;
             direction.y = mycoords.0.y;
             println!(
-                "\n\n\n\n\n\n\nplayer:{} {}\ncoursor:{}{}\n\n\n\n\n\n\n",
+                "\n\n\n\n\n\n\nplayer:{} {}\ncoursor:{} {}\n\n\n\n\n\n\n",
                 player_x, player_y, mycoords.0.x, mycoords.0.y
             );
             direction = direction.normalize_or_zero();
@@ -240,7 +243,7 @@ fn test_spawn_weapon(
                 custom_size: Some(Vec2::new(50.0, 50.0)),
                 ..default()
             },
-            transform: Transform::from_xyz(100.0, 0.0, 0.5),
+            transform: Transform::from_xyz(100.0, 0.0, 0.1),
             // texture: asset_server.load("ducky.png"),
             ..default()
         },
