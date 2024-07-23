@@ -16,20 +16,19 @@ pub struct Health {
 }
 
 #[derive(Component)]
-pub struct StaffAmo{
+pub struct StaffAmo {
     pub current: i32,
     pub max: i32,
 }
 
 #[derive(Component)]
-pub struct ThomeAmo{
+pub struct ThomeAmo {
     pub current: i32,
     pub max: i32,
 }
 
 #[derive(Component)]
-pub struct AlchemyAmo{
+pub struct AlchemyAmo {
     pub current: i32,
     pub max: i32,
 }
-

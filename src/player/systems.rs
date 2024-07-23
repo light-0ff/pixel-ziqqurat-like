@@ -1,34 +1,15 @@
-use super::{
-    component::{AlchemyAmo, FromPlayer, Health, StaffAmo, ThomeAmo, Velocity},
+use super::components::Player;
+use crate::{
+    bullet::Bullet,
+    characters::{AlchemyAmo, FromPlayer, Health, StaffAmo, ThomeAmo, Velocity},
     enemy::Enemy,
+    weapon::{Inventory, Triangle, Weapon, WeaponType},
 };
-use crate::bullet::Bullet;
-use crate::{weapon::*, MyWorldCoords};
 use bevy::{
-    math::{
-        bounding::{Aabb2d, IntersectsVolume},
-        Vec3Swizzles,
-    },
+    math::bounding::{Aabb2d, IntersectsVolume},
     prelude::*,
     utils::HashSet,
 };
-
-#[derive(Component)]
-pub struct Player;
-
-pub struct PlayerPlugin;
-
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_player)
-            .add_systems(Startup, (test_spawn_weapon, spawn_weapon_aim))
-            .add_systems(FixedUpdate, player_movement)
-            .add_systems(
-                Update,
-                (player_shoot, player_laser_hit_enemy_system, move_weapon_aim),
-            );
-    }
-}
 
 pub fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
     const DEFAULT_WAND: Weapon = Weapon {
@@ -143,7 +124,7 @@ pub fn player_shoot(
     }
 }
 
-fn player_laser_hit_enemy_system(
+pub fn player_laser_hit_enemy_system(
     mut commands: Commands,
     laser_query: Query<
         (
@@ -225,7 +206,7 @@ fn player_laser_hit_enemy_system(
     }
 }
 
-fn test_spawn_weapon(
+pub fn test_spawn_weapon(
     mut commands: Commands,
     // asset_server: Res<AssetServer>
 ) {

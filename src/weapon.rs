@@ -1,11 +1,10 @@
+use crate::MyWorldCoords;
 use bevy::{
     prelude::*,
     sprite::{MaterialMesh2dBundle, Mesh2dHandle},
 };
-
-use crate::{characters::player::Player, MyWorldCoords};
-
 // use crate::bullet::Bullet;
+use super::player::components::Player;
 
 #[derive(Debug)]
 pub enum WeaponType {
@@ -38,7 +37,7 @@ pub struct Triangle;
 
 const ORBIT_DISTANCE: f32 = 50.;
 
-pub fn spawn_weapon_aim(
+pub fn spawn_aim_triangle(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -61,7 +60,7 @@ pub fn spawn_weapon_aim(
 
 // follows mouse
 // rotates sprite
-pub fn move_weapon_aim(
+pub fn move_aim_triangle(
     mycoords: ResMut<MyWorldCoords>,
     player_query: Query<&Transform, With<Player>>,
     mut triangle_query: Query<&mut Transform, (With<Triangle>, Without<Player>)>,

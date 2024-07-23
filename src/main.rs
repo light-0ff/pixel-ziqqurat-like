@@ -2,12 +2,16 @@
 
 mod bullet;
 mod characters;
+mod enemy;
+mod player;
 mod weapon;
 
+use crate::player::components::Player;
 use bevy::asset::AssetMetaCheck;
 use bevy::{prelude::*, window::PrimaryWindow};
 use bullet::BulletPlugin;
-use characters::{player::Player, CharacterPlugin};
+use enemy::EnemyPlugin;
+use player::PlayerPlugin;
 
 pub const WINDOW_WIDTH: f32 = 1280.0;
 pub const WINDOW_HEIGHT: f32 = 800.0;
@@ -33,7 +37,8 @@ fn main() {
                 }),
         )
         .add_plugins(BulletPlugin)
-        .add_plugins(CharacterPlugin)
+        .add_plugins(PlayerPlugin)
+        .add_plugins(EnemyPlugin)
         .init_resource::<MyWorldCoords>()
         .add_systems(Startup, (setup, spawn_center))
         .add_systems(Update, (camera_track_player, my_cursor_system))
