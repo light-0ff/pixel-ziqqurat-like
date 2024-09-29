@@ -7,7 +7,7 @@ My little side project that I’d like to create a 2D Top-down shooter template 
 at the moment there is no way to run it normally. there is no executable file and i don't plan to publish it on itch.io. 
 You can compile it yourself, for this you will need to:
 
-first or go [here](https://www.rust-lang.org/learn/get-started), and follow instructions.
+first go [here](https://www.rust-lang.org/learn/get-started), and follow instructions.
 
 ### Linux
 Follow the instructions at [Linux Dependencies](https://github.com/bevyengine/bevy/blob/latest/docs/linux_dependencies.md)
