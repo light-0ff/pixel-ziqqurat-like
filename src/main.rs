@@ -1,25 +1,12 @@
-#![allow(clippy::too_many_arguments, clippy::type_complexity)]
+use bevy::prelude::*;
 
-mod bullet;
-mod characters;
-mod enemy;
-mod player;
-mod weapon;
-
-use crate::player::components::Player;
-use bevy::asset::AssetMetaCheck;
-use bevy::{prelude::*, window::PrimaryWindow};
-use bullet::BulletPlugin;
-use enemy::EnemyPlugin;
-use player::PlayerPlugin;
-
-pub const WINDOW_WIDTH: f32 = 1280.0;
-pub const WINDOW_HEIGHT: f32 = 800.0;
-
+pub const WINDOW_WIDTH: f32 = 640.0 * 2.0;
+pub const WINDOW_HEIGHT: f32 = 360.0 * 2.0;
 fn main() {
     App::new()
         .add_plugins(
             DefaultPlugins
+                .set(ImagePlugin::default_nearest())
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Some game window".into(),
@@ -29,86 +16,12 @@ fn main() {
                         ..default()
                     }),
                     ..default()
-                })
-                .set(ImagePlugin::default_nearest())
-                .set(AssetPlugin {
-                    meta_check: AssetMetaCheck::Never,
-                    ..default()
                 }),
         )
-        .add_plugins(BulletPlugin)
-        .add_plugins(PlayerPlugin)
-        .add_plugins(EnemyPlugin)
-        .init_resource::<MyWorldCoords>()
-        .add_systems(Startup, (setup, spawn_center))
-        .add_systems(Update, (camera_track_player, my_cursor_system))
+        .add_systems(Startup, setup)
         .run();
 }
 
-/// We will store the world position of the mouse cursor here.
-#[derive(Resource, Default)]
-struct MyWorldCoords(Vec2);
-
-/// Used to help identify our main camera
-#[derive(Component)]
-struct MainCamera;
-
 fn setup(mut commands: Commands) {
-    commands.spawn((
-        Camera2dBundle::default(),
-        MainCamera,
-        Name::new("MainCamera"),
-    ));
-}
-
-pub fn spawn_center(mut commands: Commands) {
-    commands.spawn((
-        SpriteBundle {
-            sprite: Sprite {
-                color: Color::srgb(1.2, 1.2, 1.2),
-                custom_size: Some(Vec2::new(60.0, 60.0)),
-                ..default()
-            },
-            transform: Transform {
-                translation: Vec3::new(0.0, 0.0, 0.0),
-                ..default()
-            },
-            ..default()
-        },
-        Name::new("Center"),
-    ));
-}
-
-fn camera_track_player(
-    mut camera_transform: Query<&mut Transform, With<Camera>>,
-    player_transform: Query<&Transform, (With<Player>, Without<Camera>)>,
-) {
-    let mut camera_trans = camera_transform.single_mut();
-    let playertrans = player_transform.single().translation.truncate();
-    let camtrans = camera_trans.translation.truncate();
-    camera_trans.translation = camtrans.lerp(playertrans, 0.1).extend(999.0);
-}
-
-fn my_cursor_system(
-    mut mycoords: ResMut<MyWorldCoords>,
-    // query to get the window (so we can read the current cursor position)
-    window_q: Query<&Window, With<PrimaryWindow>>,
-    // query to get camera transform
-    camera_q: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-) {
-    // get the camera info and transform
-    let (camera, camera_transform) = camera_q.single();
-
-    let window = window_q.single();
-
-    // check if the cursor is inside the window and get its position
-    // then, ask bevy to convert into world coordinates, and truncate to discard Z
-    if let Some(world_position) = window
-        .cursor_position()
-        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-        .map(|ray| ray.origin.truncate())
-    {
-        mycoords.0 = world_position;
-        // eprintln!("World coords: {}/{}", world_position.x, world_position.y);
-    }
+    commands.spawn((Camera2dBundle::default(), Name::new("MainCamera")));
 }
