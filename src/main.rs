@@ -21,6 +21,7 @@ fn main() {
         )
         .add_systems(Startup, setup)
         .add_systems(Startup, spawn_player)
+        .add_systems(Update, handle_player_input)
         .run();
 }
 
@@ -63,4 +64,31 @@ fn spawn_player(
         Player,
         Name::new("Player"),
     ));
+}
+
+const PLAYER_SPEED: f32 = 7.0; // replase to velocity{min, max}
+
+fn handle_player_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut player_query: Query<&mut Transform, With<Player>>,
+) {
+    let mut transform = match player_query.get_single_mut() {
+        Ok(result) => result,
+        Err(error) => panic!("handle_player_input Cant find player: {error:?}"),
+    };
+    let mut movement = Vec2::ZERO;
+    if keyboard_input.pressed(KeyCode::ArrowLeft) || keyboard_input.pressed(KeyCode::KeyA) {
+        movement.x -= 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::ArrowRight) || keyboard_input.pressed(KeyCode::KeyD) {
+        movement.x += 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
+        movement.y += 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::ArrowDown) || keyboard_input.pressed(KeyCode::KeyS) {
+        movement.y -= 1.0;
+    }
+    movement = movement.normalize_or_zero() * PLAYER_SPEED;
+    transform.translation += Vec3::new(movement.x, movement.y, 0.0);
 }
